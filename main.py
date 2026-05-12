@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta, timezone
-from typing import Literal
 import logging
 import os
+from datetime import datetime, timedelta, timezone
+from typing import Literal
+
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, Integer, String, create_engine
+from sqlalchemy import Column, DateTime, Integer, String, create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +47,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Cloud Log Monitoring API",
-    description="A small cloud engineering project for log ingestion, health checks, and alert detection.",
+    description="A small cloud engineering project for log ingestion, health checks, metrics, and alert detection.",
     version="1.0.0",
 )
 
@@ -55,7 +57,8 @@ class LogEntry(BaseModel):
     level: Literal["INFO", "WARNING", "ERROR"] = Field(..., example="ERROR")
     message: str = Field(..., min_length=1, example="Database timeout")
     timestamp: datetime | None = None
-      
+
+
 class LogResponse(BaseModel):
     id: int
     service: str
@@ -81,6 +84,7 @@ def root():
         "message": "Cloud Log Monitoring API",
         "docs": "/docs",
         "health": "/health",
+        "ready": "/ready",
     }
 
 
@@ -93,6 +97,17 @@ def health_check(db: Session = Depends(get_db)):
         "timestamp": datetime.now(timezone.utc),
         "log_count": log_count,
         "storage": "sqlite",
+    }
+
+
+@app.get("/ready")
+def readiness_check(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+
+    return {
+        "status": "ready",
+        "database": "reachable",
+        "timestamp": datetime.now(timezone.utc),
     }
 
 
@@ -110,6 +125,7 @@ def ingest_log(log: LogEntry, db: Session = Depends(get_db)):
     db.add(record)
     db.commit()
     db.refresh(record)
+
     logger.info(
         "Ingested log service=%s level=%s id=%s",
         record.service,
@@ -130,6 +146,20 @@ def get_logs(db: Session = Depends(get_db)):
     return {
         "count": len(records),
         "logs": [LogResponse.model_validate(record) for record in records],
+    }
+
+
+@app.delete("/logs")
+def delete_logs(db: Session = Depends(get_db)):
+    deleted_count = db.query(LogRecord).count()
+    db.query(LogRecord).delete()
+    db.commit()
+
+    logger.info("Deleted logs count=%s", deleted_count)
+
+    return {
+        "status": "deleted",
+        "deleted_logs": deleted_count,
     }
 
 
@@ -164,6 +194,8 @@ def get_alerts(db: Session = Depends(get_db)):
                 }
             )
 
+    logger.info("Checked alerts alert_count=%s", len(alerts))
+
     return {
         "alert_count": len(alerts),
         "alerts": alerts,
@@ -192,14 +224,4 @@ def get_metrics(db: Session = Depends(get_db)):
             "ERROR": error_logs,
         },
         "logs_by_service": logs_by_service,
-    }
-@app.delete("/logs")
-def delete_logs(db: Session = Depends(get_db)):
-    deleted_count = db.query(LogRecord).count()
-    db.query(LogRecord).delete()
-    db.commit()
-    logger.info("Deleted logs count=%s", deleted_count)
-    return {
-        "status": "deleted",
-        "deleted_logs": deleted_count,
     }
