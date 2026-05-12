@@ -1,17 +1,15 @@
+import json
+
 import requests
 
 
 BASE_URL = "http://localhost:8080"
 
 
-def send_log(service, level, message):
+def send_log(log):
     response = requests.post(
         f"{BASE_URL}/logs",
-        json={
-            "service": service,
-            "level": level,
-            "message": message,
-        },
+        json=log,
         timeout=10,
     )
     response.raise_for_status()
@@ -19,19 +17,29 @@ def send_log(service, level, message):
 
 
 def main():
-    print("Checking service health...")
+    print("Clearing old logs...")
+    cleanup = requests.delete(f"{BASE_URL}/logs", timeout=10)
+    cleanup.raise_for_status()
+    print(cleanup.json())
+
+    print("\nChecking service health...")
     health = requests.get(f"{BASE_URL}/health", timeout=10)
     health.raise_for_status()
     print(health.json())
 
-    print("\nSending 5 ERROR logs...")
-    for i in range(5):
-        result = send_log(
-            service="payment-api",
-            level="ERROR",
-            message=f"Database timeout #{i + 1}",
-        )
+    print("\nLoading example logs...")
+    with open("example_logs.json", "r", encoding="utf-8") as file:
+        example_logs = json.load(file)
+
+    print(f"Sending {len(example_logs)} example logs...")
+    for log in example_logs:
+        result = send_log(log)
         print(result)
+
+    print("\nChecking metrics...")
+    metrics = requests.get(f"{BASE_URL}/metrics", timeout=10)
+    metrics.raise_for_status()
+    print(metrics.json())
 
     print("\nChecking alerts...")
     alerts = requests.get(f"{BASE_URL}/alerts", timeout=10)
