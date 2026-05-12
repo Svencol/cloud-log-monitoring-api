@@ -37,6 +37,10 @@ Returns basic project information.
 
 Returns service health, current log count, and storage backend.
 
+### GET /ready
+
+Checks whether the application is ready to serve traffic by verifying that the database is reachable.
+
 ### POST /logs
 
 Ingests a log entry.
