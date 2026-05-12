@@ -18,3 +18,9 @@ compose-down:
 
 test-api:
 	python test_api.py
+
+test:
+	pytest
+
+check:
+	pytest
