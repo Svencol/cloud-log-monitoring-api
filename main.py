@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-
+import os
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 
-DATABASE_URL = "sqlite:///./logs.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./logs.db")
 
 engine = create_engine(
     DATABASE_URL,
