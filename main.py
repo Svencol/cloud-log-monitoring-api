@@ -51,12 +51,11 @@ app = FastAPI(
 
 
 class LogEntry(BaseModel):
-    service: str = Field(..., example="payment-api")
+    service: str = Field(..., min_length=1, example="payment-api")
     level: Literal["INFO", "WARNING", "ERROR"] = Field(..., example="ERROR")
-    message: str = Field(..., example="Database timeout")
+    message: str = Field(..., min_length=1, example="Database timeout")
     timestamp: datetime | None = None
-
-
+      
 class LogResponse(BaseModel):
     id: int
     service: str

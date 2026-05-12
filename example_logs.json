@@ -1,0 +1,37 @@
+[
+  {
+    "service": "payment-api",
+    "level": "ERROR",
+    "message": "Database timeout"
+  },
+  {
+    "service": "payment-api",
+    "level": "ERROR",
+    "message": "Connection pool exhausted"
+  },
+  {
+    "service": "payment-api",
+    "level": "ERROR",
+    "message": "Query execution exceeded timeout"
+  },
+  {
+    "service": "payment-api",
+    "level": "ERROR",
+    "message": "Database connection refused"
+  },
+  {
+    "service": "payment-api",
+    "level": "ERROR",
+    "message": "Retry limit reached"
+  },
+  {
+    "service": "user-api",
+    "level": "INFO",
+    "message": "User profile loaded successfully"
+  },
+  {
+    "service": "notification-worker",
+    "level": "WARNING",
+    "message": "Email provider response delayed"
+  }
+]
