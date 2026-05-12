@@ -181,3 +181,13 @@ def get_metrics(db: Session = Depends(get_db)):
         },
         "logs_by_service": logs_by_service,
     }
+@app.delete("/logs")
+def delete_logs(db: Session = Depends(get_db)):
+    deleted_count = db.query(LogRecord).count()
+    db.query(LogRecord).delete()
+    db.commit()
+
+    return {
+        "status": "deleted",
+        "deleted_logs": deleted_count,
+    }
