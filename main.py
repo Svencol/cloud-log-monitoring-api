@@ -1,11 +1,18 @@
 from datetime import datetime, timedelta, timezone
 from typing import Literal
+import logging
 import os
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer, String, create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./logs.db")
 
@@ -104,6 +111,12 @@ def ingest_log(log: LogEntry, db: Session = Depends(get_db)):
     db.add(record)
     db.commit()
     db.refresh(record)
+    logger.info(
+        "Ingested log service=%s level=%s id=%s",
+        record.service,
+        record.level,
+        record.id,
+    )
 
     return {
         "status": "received",
@@ -186,7 +199,7 @@ def delete_logs(db: Session = Depends(get_db)):
     deleted_count = db.query(LogRecord).count()
     db.query(LogRecord).delete()
     db.commit()
-
+    logger.info("Deleted logs count=%s", deleted_count)
     return {
         "status": "deleted",
         "deleted_logs": deleted_count,
